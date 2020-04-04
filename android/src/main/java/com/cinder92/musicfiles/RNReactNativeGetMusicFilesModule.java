@@ -25,28 +25,18 @@ import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.bridge.WritableNativeArray;
 import com.facebook.react.bridge.WritableNativeMap;
 
-import wseemann.media.FFmpegMediaMetadataRetriever;
-
 import com.facebook.react.modules.core.DeviceEventManagerModule;
-import com.cinder92.musicfiles.ReactNativeFileManager;
-
-import org.farng.mp3.MP3File;
 
 
 public class RNReactNativeGetMusicFilesModule extends ReactContextBaseJavaModule {
 
     private final ReactApplicationContext reactContext;
-    private boolean getBluredImages = false;
     private boolean getArtistFromSong = false;
     private boolean getDurationFromSong = true;
     private boolean getTitleFromSong = true;
     private boolean getIDFromSong = false;
-    private boolean getCoverFromSong = false;
     private boolean getGenreFromSong = false;
     private boolean getAlbumFromSong = true;
-    private boolean getDateFromSong = false;
-    private boolean getCommentsFromSong = false;
-    private boolean getLyricsFromSong = false;
     private int minimumSongDuration = 0;
     private int songsPerIteration = 0;
     private int version = Build.VERSION.SDK_INT;
@@ -64,13 +54,6 @@ public class RNReactNativeGetMusicFilesModule extends ReactContextBaseJavaModule
 
     @ReactMethod
     public void getAll(ReadableMap options, final Callback successCallback, final Callback errorCallback) {
-
-
-        if (options.hasKey("blured")) {
-            getBluredImages = options.getBoolean("blured");
-        }
-
-
         if (options.hasKey("artist")) {
             getArtistFromSong = options.getBoolean("artist");
         }
@@ -87,10 +70,6 @@ public class RNReactNativeGetMusicFilesModule extends ReactContextBaseJavaModule
             getIDFromSong = options.getBoolean("id");
         }
 
-        if (options.hasKey("cover")) {
-            getCoverFromSong = options.getBoolean("cover");
-        }
-
         if (options.hasKey("genre")) {
             getGenreFromSong = options.getBoolean("genre");
         }
@@ -98,16 +77,6 @@ public class RNReactNativeGetMusicFilesModule extends ReactContextBaseJavaModule
         if (options.hasKey("album")) {
             getAlbumFromSong = options.getBoolean("album");
         }
-
-        /*if (options.hasKey("date")) {
-            getDateFromSong = options.getBoolean("date");
-        }
-        if (options.hasKey("comments")) {
-            getCommentsFromSong = options.getBoolean("comments");
-        }
-        if (options.hasKey("lyrics")) {
-            getLyricsFromSong = options.getBoolean("lyrics");
-        }*/
 
         if (options.hasKey("batchNumber")) {
             songsPerIteration = options.getInt("batchNumber");
@@ -146,8 +115,6 @@ public class RNReactNativeGetMusicFilesModule extends ReactContextBaseJavaModule
         String sortOrder = MediaStore.Audio.Media.TITLE + " ASC";
         Cursor musicCursor = musicResolver.query(musicUri, STAR, selection, null, sortOrder);
 
-        //Log.i("Tienes => ",Integer.toString(musicCursor.getCount()));
-
         int pointer = 0;
 
         if (musicCursor != null && musicCursor.moveToFirst()) {
@@ -156,10 +123,7 @@ public class RNReactNativeGetMusicFilesModule extends ReactContextBaseJavaModule
                 WritableArray jsonArray = new WritableNativeArray();
                 WritableMap items;
 
-
-                //FFmpegMediaMetadataRetriever mmr = new FFmpegMediaMetadataRetriever();
                 MediaMetadataRetriever mmr = new MediaMetadataRetriever();
-
 
                 int idColumn = musicCursor.getColumnIndex(android.provider.MediaStore.Audio.Media._ID);
 
@@ -176,7 +140,6 @@ public class RNReactNativeGetMusicFilesModule extends ReactContextBaseJavaModule
                             }
 
                             String songPath = musicCursor.getString(musicCursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA));
-                            //MP3File mp3file = new MP3File(songPath);
 
                             Log.e("musica",songPath);
 
@@ -190,86 +153,32 @@ public class RNReactNativeGetMusicFilesModule extends ReactContextBaseJavaModule
 
                                 mmr.setDataSource(songPath);
 
-                                //String songTimeDuration = mmr.extractMetadata(FFmpegMediaMetadataRetriever.METADATA_KEY_DURATION);
                                 String songTimeDuration = mmr.extractMetadata(mmr.METADATA_KEY_DURATION);
-                                int songIntDuration = Integer.parseInt(songTimeDuration);
 
                                 if (getAlbumFromSong) {
                                     String songAlbum = mmr.extractMetadata(mmr.METADATA_KEY_ALBUM);
-                                    //String songAlbum = mmr.extractMetadata(FFmpegMediaMetadataRetriever.METADATA_KEY_ALBUM);
                                     items.putString("album", songAlbum);
                                 }
 
                                 if (getArtistFromSong) {
                                     String songArtist = mmr.extractMetadata(mmr.METADATA_KEY_ARTIST);
-                                    //String songArtist = mmr.extractMetadata(FFmpegMediaMetadataRetriever.METADATA_KEY_ARTIST);
                                     items.putString("author", songArtist);
                                 }
 
 
                                 if (getTitleFromSong) {
                                     String songTitle = mmr.extractMetadata(mmr.METADATA_KEY_TITLE);
-                                    //String songTitle = mmr.extractMetadata(FFmpegMediaMetadataRetriever.METADATA_KEY_TITLE);
                                     items.putString("title", songTitle);
                                 }
 
                                 if (getGenreFromSong) {
                                     String songGenre = mmr.extractMetadata(mmr.METADATA_KEY_GENRE);
-                                    //String songGenre = mmr.extractMetadata(FFmpegMediaMetadataRetriever.METADATA_KEY_GENRE);
                                     items.putString("genre", songGenre);
                                 }
 
                                 if (getDurationFromSong) {
                                     items.putString("duration", songTimeDuration);
                                 }
-
-                                /*if (getCommentsFromSong) {
-                                    items.putString("comments", mmr.extractMetadata(FFmpegMediaMetadataRetriever.METADATA_KEY_COMMENT));
-                                }
-                                if (getDateFromSong) {
-                                    items.putString("date", mmr.extractMetadata(FFmpegMediaMetadataRetriever.METADATA_KEY_DATE));
-                                }
-                                if (getLyricsFromSong) {
-                                    //String lyrics = mp3file.getID3v2Tag().getSongLyric();
-                                    //items.putString("lyrics", lyrics);
-                                }*/
-
-                                if (getCoverFromSong) {
-
-                                    ReactNativeFileManager fcm = new ReactNativeFileManager();
-
-                                    String encoded = "";
-                                    String blurred = "";
-                                    try {
-                                        byte[] albumImageData = mmr.getEmbeddedPicture();
-
-                                        if (albumImageData != null) {
-                                            Bitmap songImage = BitmapFactory.decodeByteArray(albumImageData, 0, albumImageData.length);
-
-                                            try {
-                                                String pathToImg = Environment.getExternalStorageDirectory() + "/" + songId + ".jpg";
-                                                encoded = fcm.saveImageToStorageAndGetPath(pathToImg, songImage);
-                                                items.putString("cover", "file://" + encoded);
-                                            } catch (Exception e) {
-                                                // Just let images empty
-                                                Log.e("error in image", e.getMessage());
-                                            }
-
-                                            if (getBluredImages) {
-                                                try {
-                                                    String pathToImg = Environment.getExternalStorageDirectory() + "/" + songId + "-blur.jpg";
-                                                    blurred = fcm.saveBlurImageToStorageAndGetPath(pathToImg, songImage);
-                                                    items.putString("blur", "file://" + blurred);
-                                                } catch (Exception e) {
-                                                    Log.e("error in image-blured", e.getMessage());
-                                                }
-                                            }
-                                        }
-                                    }catch (Exception e) {
-                                        Log.e("embedImage","No embed image");
-                                    }
-                                }
-
 
                                 jsonArray.pushMap(items);
 
@@ -299,11 +208,6 @@ public class RNReactNativeGetMusicFilesModule extends ReactContextBaseJavaModule
                             }
 
                         } catch (Exception e) {
-                            // An error in one message should not prevent from getting the rest
-                            // There are cases when a corrupted file can't be read and a RuntimeException is raised
-
-                            // Let's discuss how to deal with these kind of exceptions
-                            // This song will be ignored, and incremented the pointer in order to this plugin work
                             pointer++;
 
                             continue; // This is redundant, but adds meaning
@@ -314,7 +218,6 @@ public class RNReactNativeGetMusicFilesModule extends ReactContextBaseJavaModule
                     if (songsPerIteration == 0) {
                         successCallback.invoke(jsonArray);
                     }
-
                 } catch (RuntimeException e) {
                     errorCallback.invoke(e.toString());
                 } catch (Exception e) {
